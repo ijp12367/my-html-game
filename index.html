@@ -1,0 +1,3450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desert Runner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffd480;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1800px;
+            height: 1050px;
+            overflow: hidden;
+            border: 4px solid #8b4513;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #game-canvas {
+            background-color: #f9e4b7;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 20px;
+        }
+
+        .ui-element {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            z-index: 20;
+        }
+
+        #game-over-screen {
+            display: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ffc107;
+            text-shadow: 3px 3px 0 #8b4513;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ff7f50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background-color: #ff6347;
+        }
+
+        #controls {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        #settings-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 20;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .settings-row label {
+            flex: 1;
+            font-size: 18px;
+        }
+
+        .settings-row input[type="range"] {
+            flex: 2;
+            margin: 0 15px;
+        }
+
+        .toggle-button {
+            width: 120px;
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .toggle-button:hover {
+            background-color: #777;
+        }
+
+        #settings-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 25; /* Higher than other screens (was 15) */
+        }
+
+        /* Add these styles to your existing <style> section */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 20;
+        }
+
+        #login-screen, #leaderboard-screen {
+            display: none;
+        }
+
+        .login-container, .leaderboard-container {
+            width: 80%;
+            max-width: 500px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .error-message {
+            color: #ff6347;
+            font-size: 14px;
+            min-height: 20px;
+            margin: 5px 0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button.secondary {
+            background-color: #555;
+        }
+
+        button.secondary:hover {
+            background-color: #777;
+        }
+
+        #leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        #leaderboard-table th, #leaderboard-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #leaderboard-table th {
+            background-color: rgba(255, 127, 80, 0.5);
+        }
+
+        #leaderboard-table tr.current-user {
+            background-color: rgba(255, 215, 0, 0.2);
+            font-weight: bold;
+        }
+
+        #profile-control {
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            cursor: pointer;
+        }
+
+        #profile-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 200px;
+        }
+
+        #profile-menu button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        #profile-menu button:hover {
+            background-color: #777;
+        }
+
+        /* Add these styles to your existing <style> section */
+        .settings-section {
+            width: 80%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .settings-section h2 {
+            color: #ffc107;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .profile-info {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        #leaderboard-button {
+            cursor: pointer;
+        }
+
+        #leaderboard-button:hover {
+            transform: scale(1.1);
+        }
+
+        #settings-button:hover {
+            transform: scale(1.1);
+        }
+
+        #settings-button, #leaderboard-button {
+            position: absolute;
+            top: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            width: 40px; /* Square dimensions */
+            height: 40px;
+            border-radius: 5px; /* Slightly rounded corners */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 25;
+        }
+
+        /* Adjust positions to prevent overlap - updated spacing */
+        #settings-button {
+            right: 10px; /* Keep settings button position unchanged */
+        }
+
+        #leaderboard-button {
+            right: 80px; /* Increased from 60px to 70px to move further left */
+        }
+
+        .login-container {
+            width: 80%;
+            max-width: 500px;
+            background-color: rgba(0, 0, 0, 0.8); /* Darker, more transparent background */
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #ff7f50; /* Add a border to match the game's theme */
+            box-shadow: 0 0 10px rgba(255, 127, 80, 0.5);
+        }
+
+        .login-container p {
+            color: #ffc107; /* Match the game's text color */
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ff7f50; /* Orange border */
+            border-radius: 5px;
+            font-size: 18px;
+            background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
+            color: white; /* White text */
+            box-sizing: border-box;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5); /* Lighter placeholder text */
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ffc107; /* Highlight on focus */
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .requirements-text {
+            color: #ff7f50;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="1800" height="1050"></canvas>
+
+        <!-- Update the ui-container div -->
+        <div id="ui-container">
+            <div class="ui-element">Score: <span id="score">0</span></div>
+            <div class="ui-element">High Score: <span id="high-score">0</span></div>
+            <div class="ui-element">User: <span id="profile-text">Guest</span></div>
+        </div>
+
+        <div id="start-screen">
+            <h1>DESERT RUNNER</h1>
+            <button id="start-button">START GAME</button>
+            <div id="controls">
+                ARROW KEYS or WASD to move & jump | SPACE to shoot or restart<br>
+                Avoid obstacles, use platforms, and shoot enemies to survive!
+            </div>
+        </div>
+
+        <div id="game-over-screen">
+            <h1>GAME OVER</h1>
+            <p>Your score: <span id="final-score">0</span></p>
+            <button id="restart-button">PLAY AGAIN</button>
+        </div>
+
+        <!-- Add this within your existing game-container div -->
+        <!-- Update the settings screen to include user options -->
+        <div id="settings-screen" class="overlay-screen">
+            <h1>SETTINGS</h1>
+            
+            <!-- Add user profile section -->
+            <div class="settings-section" id="user-section">
+                <h2>User Profile</h2>
+                <div class="profile-info">
+                    Currently playing as: <span id="settings-profile-text">Guest</span>
+                </div>
+                <div class="button-group">
+                    <button id="switch-user-button" class="toggle-button">Switch User</button>
+                    <button id="delete-profile-button" class="toggle-button">Delete Profile</button>
+                </div>
+            </div>
+            
+            <h2>Sound Settings</h2>
+            <div class="settings-row">
+                <label for="master-volume-slider">Master Volume</label>
+                <input type="range" id="master-volume-slider" min="0" max="1" step="0.1" value="0.7">
+                <button id="master-mute-button" class="toggle-button">Mute All</button>
+            </div>
+            
+            <div class="settings-row">
+                <label for="music-volume-slider">Music Volume</label>
+                <input type="range" id="music-volume-slider" min="0" max="1" step="0.1" value="0.5">
+                <button id="music-mute-button" class="toggle-button">Music: On</button>
+            </div>
+            
+            <div class="settings-row">
+                <label for="effects-volume-slider">Effects Volume</label>
+                <input type="range" id="effects-volume-slider" min="0" max="1" step="0.1" value="0.8">
+                <button id="effects-mute-button" class="toggle-button">SFX: On</button>
+            </div>
+            
+            <button id="close-settings-button" class="button">CLOSE</button>
+        </div>
+
+        <!-- Add a settings button to the UI -->
+        <div id="settings-button" class="ui-element">
+            <span>⚙️</span>
+        </div>
+
+        <!-- Add a leaderboard button next to settings -->
+        <div id="leaderboard-button" class="ui-element">
+            <span>🏆</span>
+        </div>
+
+        <!-- Add these within your game-container div, after the existing screens -->
+        <div id="login-screen" class="overlay-screen">
+            <h1>DESERT RUNNER</h1>
+            <div class="login-container">
+                <p>Enter a username to save your scores:</p>
+                <p class="requirements-text">(3+ characters, cannot be "Guest")</p>
+                <input type="text" id="username-input" maxlength="15" placeholder="Username">
+                <p id="username-error" class="error-message"></p>
+                <div class="button-group">
+                    <button id="login-button" class="button">PLAY</button>
+                    <button id="guest-button" class="button secondary">PLAY AS GUEST</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="leaderboard-screen" class="overlay-screen">
+            <h1>LEADERBOARD</h1>
+            <div class="leaderboard-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Username</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Leaderboard entries will be added here -->
+                    </tbody>
+                </table>
+                <p id="leaderboard-status"></p>
+            </div>
+            <div class="button-group">
+                <button id="play-again-button" class="button">PLAY AGAIN</button>
+                <button id="leaderboard-back-button" class="button secondary">BACK</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Game canvas setup
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI elements
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
+        const finalScoreElement = document.getElementById('final-score');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
+        // Game state variables
+        let gameRunning = false;
+        let animationFrameId = null;
+        let score = 0;
+        let highScore = localStorage.getItem('desertRunnerHighScore') || 0;
+        let lastScoreTime = 0;
+        let lastObstacleTime = 0;
+        let lastEnemyTime = 0;
+        
+        // Set initial game speed
+        const initialGameSpeed = 2.5;  // Reduced from 3 to 2.5 for slower pace
+        let gameSpeed = initialGameSpeed;
+        
+        // Update high score display
+        highScoreElement.textContent = highScore;
+
+        // Game sprites and assets
+        const sprites = {
+            // Define basic colors for fallback
+            colors: {
+                player: '#3498db',
+                ground: '#d35400',
+                obstacle: '#8b4513',
+                bullet: '#ff0',
+                platform: '#8b4513', // Add fallback color for platforms
+                enemies: {
+                    snake: '#2ecc71',
+                    flame: '#e74c3c',
+                    vulture: '#333'
+                }
+            },
+            // Initialize image properties to null
+            images: {
+                player: {
+                    standing: null,
+                    running1: null,
+                    running2: null,
+                    jumping: null
+                },
+                enemies: {
+                    snake1: null,
+                    snake2: null,
+                    flame1: null,
+                    flame2: null,
+                    vulture1: null,
+                    vulture2: null,
+                    vulture3: null
+                },
+                obstacles: {
+                    smallCactus: null,
+                    largeCactus: null
+                },
+                platform: null, // Add platform image property
+                background: null,
+                ground: null,
+                bullet: null // Add bullet image property
+            },
+            // Add a flag to track if images are available
+            imagesLoaded: false
+        };
+
+        // Add point pickup type to the sprites object
+        sprites.colors.pointPickup = '#ffcc00'; // Gold color as fallback
+        sprites.images.pointPickup = null; // Will be loaded with the image
+
+        // Update sprites object to include multiple point pickup images
+        sprites.images.pointPickups = {
+            common: null,    // 5 points
+            rare: null,      // 10 points
+            epic: null       // 25 points
+        };
+
+        // Add point pickups array to track them
+        let pointPickups = [];
+
+        // Player object
+        const player = {
+            x: 150,
+            y: canvas.height - 170, // Keep the same y position
+            width: 131,             // Visible width (graphical representation)
+            height: 178,            // Visible height (graphical representation)
+            hitboxWidth: 80,        // New narrower hitbox width (was using full width before)
+            hitboxHeight: 160,      // Slightly shorter hitbox height
+            hitboxOffsetX: 25,      // Offset from left edge of sprite
+            hitboxOffsetY: 10,      // Offset from top edge of sprite
+            jumping: false,
+            dropping: false,
+            jumpHeight: 15.4,       // Reduced from 22 to 15.4 (30% reduction)
+            jumpCounter: 0,
+            velocityY: 0,
+            gravity: 0.3,
+            terminalVelocity: 12,
+            moveSpeed: 8,
+            isMovingLeft: false,
+            isMovingRight: false,
+            isShooting: false,
+            lastShot: 0,
+            shootCooldown: 400,
+            previousY: 0,
+            bulletOffsetY: 105, // Default value that you can adjust manually
+        };
+
+        // Game entities
+        let obstacles = [];
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let platforms = [];
+
+        // Helper function to safely check if an image is loaded
+        function isImageLoaded(imageObj) {
+            return imageObj !== null && imageObj !== undefined && imageObj.complete;
+        }
+
+        // Update loadImages function to include bullet image
+        function loadImages() {
+            // Helper function to load an image
+            function loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = (e) => {
+                            console.warn(`Failed to load image: ${src}`, e);
+                            resolve(null); // Resolve with null instead of rejecting
+                        };
+                        img.src = src;
+                    } catch (err) {
+                        console.warn(`Error setting up image load: ${src}`, err);
+                        resolve(null);
+                    }
+                });
+            }
+            
+            return new Promise(async (resolve) => {
+                try {
+                    // Create a temporary object for the loaded images
+                    const temp = {
+                        player: {},
+                        enemies: {},
+                        obstacles: {}
+                    };
+                    
+                    // Load player images
+                    temp.player.standing = await loadImage('images/player_standing.png');
+                    temp.player.running1 = await loadImage('images/player_running1.png');
+                    temp.player.running2 = await loadImage('images/player_running2.png');
+                    temp.player.jumping = await loadImage('images/player_jumping.png');
+                    
+                    // Load enemy images
+                    temp.enemies.snake1 = await loadImage('images/snake1.png');
+                    temp.enemies.snake2 = await loadImage('images/snake2.png');
+                    temp.enemies.flame1 = await loadImage('images/flame1.png');
+                    temp.enemies.flame2 = await loadImage('images/flame2.png');
+                    temp.enemies.vulture1 = await loadImage('images/vulture1.png');
+                    temp.enemies.vulture2 = await loadImage('images/vulture2.png');
+                    temp.enemies.vulture3 = await loadImage('images/vulture3.png');
+                    
+                    // Load obstacle images
+                    temp.obstacles.smallCactus = await loadImage('images/small_cactus.png');
+                    temp.obstacles.largeCactus = await loadImage('images/large_cactus.png');
+                    
+                    // Load platform, ground, background, and bullet images
+                    const platform = await loadImage('images/platform.png');
+                    const background = await loadImage('images/background.png');
+                    const ground = await loadImage('images/ground.png');
+                    const bullet = await loadImage('images/bullet.png'); // Load bullet image
+                    
+                    // Add point pickup loading to the loadImages function - add this inside the loadImages Promise
+                    // Add after the bullet image loading
+                    const pointPickup = await loadImage('images/point_pickup.png');
+                    if (pointPickup !== null) sprites.images.pointPickup = pointPickup;
+
+                    // Update the loadImages function to load different rarity images
+                    // Add this inside the loadImages function, replacing the existing point pickup loading code
+                    const pointPickupCommon = await loadImage('images/point_pickup_common.png');
+                    const pointPickupRare = await loadImage('images/point_pickup_rare.png');
+                    const pointPickupEpic = await loadImage('images/point_pickup_epic.png');
+
+                    if (pointPickupCommon !== null) sprites.images.pointPickups.common = pointPickupCommon;
+                    if (pointPickupRare !== null) sprites.images.pointPickups.rare = pointPickupRare;
+                    if (pointPickupEpic !== null) sprites.images.pointPickups.epic = pointPickupEpic;
+
+                    // Only assign successfully loaded images to the sprites object
+                    for (const category in temp) {
+                        if (typeof sprites.images[category] === 'object') {
+                            for (const key in temp[category]) {
+                                if (temp[category][key] !== null) {
+                                    sprites.images[category][key] = temp[category][key];
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Assign platform, ground, background and bullet images if they loaded successfully
+                    if (platform !== null) sprites.images.platform = platform;
+                    if (background !== null) sprites.images.background = background;
+                    if (ground !== null) sprites.images.ground = ground;
+                    if (bullet !== null) sprites.images.bullet = bullet; // Assign bullet image
+                    
+                    // Set the flag indicating that we attempted to load images
+                    sprites.imagesLoaded = true;
+                    console.log('Images loading completed');
+                    resolve();
+                } catch (error) {
+                    console.error("Error in image loading process:", error);
+                    sprites.imagesLoaded = false;
+                    resolve(); // Still resolve to continue the game
+                }
+            });
+        }
+
+        // Platform functions
+        // Update createInitialPlatforms function to increase vertical movement chance to 22.5%
+        function createInitialPlatforms() {
+            // Use fixed values for platform dimensions
+            const platformWidth = 132;
+            const platformHeight = 30;
+            
+            // Clear any existing platforms
+            platforms = [];
+            
+            // Randomly decide how many initial platforms (0-2)
+            const initialPlatformCount = Math.floor(Math.random() * 3);
+            
+            // Define safe zones where platforms can spawn (divide screen into thirds)
+            const safeZones = [
+                { minX: canvas.width * 0.2, maxX: canvas.width * 0.3, minY: canvas.height - 200, maxY: canvas.height - 180 },
+                { minX: canvas.width * 0.5, maxX: canvas.width * 0.6, minY: canvas.height - 300, maxY: canvas.height - 280 },
+                { minX: canvas.width * 0.7, maxX: canvas.width * 0.8, minY: canvas.height - 400, maxY: canvas.height - 380 }
+            ];
+            
+            // Choose random safe zones without replacement
+            const selectedZones = [];
+            while (selectedZones.length < initialPlatformCount && safeZones.length > 0) {
+                const randomIndex = Math.floor(Math.random() * safeZones.length);
+                selectedZones.push(safeZones.splice(randomIndex, 1)[0]);
+            }
+            
+            // Create a platform in each selected zone
+            for (let i = 0; i < selectedZones.length; i++) {
+                const zone = selectedZones[i];
+                const x = zone.minX + Math.random() * (zone.maxX - zone.minX - platformWidth);
+                const y = zone.minY + Math.random() * (zone.maxY - zone.minY);
+                
+                // Increase vertical movement chance to 22.5%
+                const hasVerticalMovement = Math.random() < 0.225; // 22.5% chance for vertical movement
+                const verticalSpeed = (Math.random() * 0.5 + 0.3) * (Math.random() < 0.5 ? 1 : -1); // 0.3-0.8 speed, random direction
+                
+                platforms.push({
+                    x: x,
+                    y: y,
+                    width: platformWidth,
+                    height: platformHeight,
+                    originalY: y, // Store original Y position for oscillation
+                    verticalMovement: hasVerticalMovement,
+                    verticalSpeed: verticalSpeed,
+                    verticalRange: 20 + Math.random() * 20, // Random range between 20-40px
+                    verticalOffset: Math.random() * Math.PI * 2, // Random starting phase
+                    lastY: y // Track the last Y position for player adjustment
+                });
+            }
+        }
+
+        // Update updatePlatforms function to include vertical movement and track lastY
+        function updatePlatforms() {
+            const platformWidth = 132;
+            const platformHeight = 30;
+            
+            for (let i = platforms.length - 1; i >= 0; i--) {
+                // Store the platform's previous Y position
+                platforms[i].lastY = platforms[i].y;
+                
+                // Move platforms with game speed
+                platforms[i].x -= gameSpeed;
+                
+                // Apply vertical movement if this platform has it
+                if (platforms[i].verticalMovement) {
+                    // Update vertical offset for smooth oscillation
+                    platforms[i].verticalOffset += 0.02; // Control the speed of oscillation
+                    
+                    // Calculate new Y position using sine wave
+                    const newY = platforms[i].originalY + 
+                                Math.sin(platforms[i].verticalOffset) * platforms[i].verticalRange;
+                    
+                    // Get the minimum allowed Y position (ground - full platform image height)
+                    // The player.height is used because we're using full player height for visual platform
+                    const minY = canvas.height - player.height - platformHeight;
+                    
+                    // Ensure platform doesn't go below minimum allowed position
+                    platforms[i].y = Math.min(newY, minY);
+                }
+                
+                // If platform goes off screen, remove it and maybe add a new one
+                if (platforms[i].x + platforms[i].width < 0) {
+                    // Remove the platform
+                    platforms.splice(i, 1);
+                    
+                    // Only spawn a new platform 70% of the time for more varied gameplay
+                    if (Math.random() < 0.7) {
+                        // Add a new platform at a random height between 180px and 380px from bottom
+                        const platformY = canvas.height - 180 - Math.random() * 200;
+                        
+                        // Increase vertical movement chance to 22.5%
+                        const hasVerticalMovement = Math.random() < 0.225; // 22.5% chance for vertical movement
+                        const verticalSpeed = (Math.random() * 0.5 + 0.3) * (Math.random() < 0.5 ? 1 : -1);
+                        
+                        // Create a potential new platform
+                        const newPlatform = {
+                            x: canvas.width,
+                            y: platformY,
+                            width: platformWidth,
+                            height: platformHeight,
+                            originalY: platformY, // Store original Y position
+                            verticalMovement: hasVerticalMovement,
+                            verticalSpeed: verticalSpeed,
+                            verticalRange: 20 + Math.random() * 20, // Random range between 20-40px
+                            verticalOffset: Math.random() * Math.PI * 2, // Random starting phase
+                            lastY: platformY // Initial lastY value
+                        };
+                        
+                        // Check if new platform would overlap with existing platforms
+                        let overlapsExisting = false;
+                        
+                        // Define a safe horizontal distance between platforms (50% of width)
+                        const safeDistance = platformWidth * 0.5;
+                        
+                        for (let j = 0; j < platforms.length; j++) {
+                            // Check horizontal distance (consider both platforms that are ahead and behind)
+                            const horizontalDistance = Math.abs((platforms[j].x + platforms[j].width/2) - 
+                                                            (newPlatform.x + newPlatform.width/2));
+                            
+                            // Check vertical distance (don't allow platforms too close vertically)
+                            const verticalDistance = Math.abs(platforms[j].y - newPlatform.y);
+                            
+                            // If platforms are too close horizontally AND vertically, it's an overlap
+                            if (horizontalDistance < safeDistance && verticalDistance < platformHeight * 2) {
+                                overlapsExisting = true;
+                                break;
+                            }
+                        }
+                        
+                        // Only add if it doesn't overlap
+                        if (!overlapsExisting) {
+                            platforms.push(newPlatform);
+                        }
+                    }
+                }
+            }
+            
+            // Make sure we always have at least 2 platforms
+            if (platforms.length < 2) {
+                // Define a safe y position
+                const platformY = canvas.height - 180 - Math.random() * 200;
+                
+                // Increase vertical movement chance to 22.5%
+                const hasVerticalMovement = Math.random() < 0.225; // 22.5% chance for vertical movement
+                const verticalSpeed = (Math.random() * 0.5 + 0.3) * (Math.random() < 0.5 ? 1 : -1);
+                
+                // Add a platform at the right edge
+                let canPlacePlatform = true;
+                
+                // Check for overlaps
+                for (let j = 0; j < platforms.length; j++) {
+                    // Check if existing platform is near right edge
+                    if (platforms[j].x > canvas.width - platformWidth * 1.5) {
+                        canPlacePlatform = false;
+                        break;
+                    }
+                }
+                
+                // Only add if safe
+                if (canPlacePlatform) {
+                    platforms.push({
+                        x: canvas.width,
+                        y: platformY,
+                        width: platformWidth,
+                        height: platformHeight,
+                        originalY: platformY, // Store original Y position
+                        verticalMovement: hasVerticalMovement,
+                        verticalSpeed: verticalSpeed,
+                        verticalRange: 20 + Math.random() * 20, // Random range
+                        verticalOffset: Math.random() * Math.PI * 2, // Random starting phase
+                        lastY: platformY // Initial lastY value
+                    });
+                }
+            }
+        }
+
+        // Update drawPlatforms function to draw platform image 40px below the hitbox top
+        function drawPlatforms() {
+            for (let i = 0; i < platforms.length; i++) {
+                const platform = platforms[i];
+                
+                if (isImageLoaded(sprites.images.platform)) {
+                    // Calculate visual dimensions for the platform image
+                    const visualWidth = platform.width;
+                    const visualHeight = player.height; // Full player height for visual
+                    
+                    // Draw the platform image below the platform hitbox
+                    // This creates the visual effect of standing on the platform while
+                    // maintaining the proper collision detection
+                    ctx.drawImage(
+                        sprites.images.platform,
+                        platform.x,
+                        platform.y - 40, // Draw image 40px above the hitbox
+                        visualWidth,
+                        visualHeight
+                    );
+                    
+                    // Debug: Draw the hitbox (uncomment to see the hitbox)
+                    /*
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+                    */
+                } else {
+                    // Fallback to solid color rectangle if no image is available
+                    ctx.fillStyle = sprites.colors.platform;
+                    ctx.fillRect(
+                        platform.x,
+                        platform.y,
+                        platform.width,
+                        platform.height
+                    );
+                }
+            }
+        }
+
+        // Event listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        document.addEventListener('keydown', function(event) {
+            // Check if settings or other overlay screens are open
+            const overlaysOpen = document.getElementById('settings-screen').style.display === 'flex' ||
+                                 document.getElementById('leaderboard-screen').style.display === 'flex';
+            
+            // Only process game controls if overlays are not open
+            if (!overlaysOpen) {
+                // Arrow keys and WASD for movement
+                if (event.code === 'ArrowLeft' || event.code === 'KeyA') player.isMovingLeft = true;
+                if (event.code === 'ArrowRight' || event.code === 'KeyD') player.isMovingRight = true;
+                
+                // Down key or S to drop through platforms
+                if ((event.code === 'ArrowDown' || event.code === 'KeyS') && gameRunning) {
+                    player.dropping = true;
+                }
+                
+                // Jump with either Up Arrow or W
+                if ((event.code === 'ArrowUp' || event.code === 'KeyW') && !player.jumping && gameRunning) {
+                    player.jumping = true;
+                    player.velocityY = -player.jumpHeight;
+                }
+                
+                // Space for shooting
+                if (event.code === 'Space') {
+                    player.isShooting = true;
+                    // Also start/restart game if showing start or game over screen
+                    if (!gameRunning || gameOverScreen.style.display === 'flex') {
+                        startGame();
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('keyup', function(event) {
+            if (event.code === 'ArrowLeft' || event.code === 'KeyA') player.isMovingLeft = false;
+            if (event.code === 'ArrowRight' || event.code === 'KeyD') player.isMovingRight = false;
+            if (event.code === 'Space') player.isShooting = false;
+            if (event.code === 'ArrowDown' || event.code === 'KeyS') player.dropping = false;
+        });
+
+        // Game initialization
+        async function initGame() {
+            try {
+                // Try to load images but continue even if they fail
+                await loadImages();
+                
+                // Load sounds in parallel
+                await loadSounds();
+                
+                // Initialize sound UI
+                initSoundControls();
+            } catch (error) {
+                console.error("Error initializing game resources:", error);
+            }
+            
+            // Don't automatically start the game, just show the start screen or login screen
+            if (userApi.currentUser.isGuest && !localStorage.getItem('desertRunnerUsername')) {
+                // If no user and not previously logged in, show login screen
+                showLoginScreen();
+            } else {
+                // Otherwise prepare the game
+                prepareGame();
+            }
+        }
+
+        // Fix prepareGame function to position character properly
+        function prepareGame() {
+            // Reset game state but don't start running yet
+            gameRunning = false;
+            gameSpeed = initialGameSpeed;
+            score = 0;
+            scoreElement.textContent = score;
+            
+            // Reset player with adjusted position for larger size
+            player.x = 150;
+            player.y = canvas.height - 178; // Adjusted for taller character
+            player.jumping = false;
+            player.dropping = false;
+            player.velocityY = 0;
+            player.previousY = player.y;
+            
+            // Clear entities
+            obstacles = [];
+            bullets = [];
+            enemies = [];
+            particles = [];
+            
+            // Initialize platforms for display on start screen
+            createInitialPlatforms();
+            
+            // Show the start screen, hide game over screen
+            startScreen.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+            
+            // Start a limited game loop just to show the scene
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            drawInitialScene();
+        }
+
+        // Update the drawInitialScene function to include background
+        function drawInitialScene() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background first
+            drawBackground();
+            
+            // Draw static elements
+            drawGround();
+            drawPlatforms();
+            drawPlayer();
+            
+            // Don't continue the animation loop
+        }
+
+        // Fix startGame function - remove duplicate player reset and fix position
+        // Update startGame function to play music
+        function startGame() {
+            // Cancel any existing loop to ensure a fresh start
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            // Reset game state
+            gameRunning = true;
+            gameSpeed = initialGameSpeed;
+            score = 0;
+            scoreElement.textContent = score;
+            
+            // Reset player with proper position to prevent spawning in ground
+            player.x = 150;
+            player.y = canvas.height - 178; // Adjusted for taller character
+            player.jumping = false;
+            player.dropping = false;
+            player.velocityY = 0;
+            player.previousY = player.y;
+            
+            // Clear entities
+            obstacles = [];
+            bullets = [];
+            enemies = [];
+            particles = [];
+            platforms = [];
+            pointPickups = [];
+            
+            // Initialize platforms with the fixed hitbox position
+            createInitialPlatforms();
+            
+            // Reset time tracking variables
+            lastScoreTime = Date.now();
+            lastObstacleTime = Date.now();
+            lastEnemyTime = Date.now();
+            
+            // Hide screens
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            // Start background music
+            if (sounds.music.main && !sounds.options.muted && !sounds.options.musicMuted) {
+                playMusic(sounds.music.main);
+            }
+            
+            // Play button click sound
+            playSound(sounds.effects.buttonClick);
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        // Update gameOver function to play death sound
+        function gameOver() {
+            gameRunning = false;
+            
+            // Play death sound
+            playSound(sounds.effects.playerDeath);
+            
+            // Stop music
+            if (sounds.music.main) {
+                sounds.music.main.pause();
+            }
+            
+            // Cancel the animation frame to stop the loop
+            
+            // Update high score if needed
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('desertRunnerHighScore', highScore);
+                highScoreElement.textContent = highScore;
+            }
+            
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function updateScore() {
+            // Time-based score update
+            const now = Date.now();
+            if (gameRunning && now - lastScoreTime >= 100) {  // Only update if game is running
+                score++;
+                scoreElement.textContent = score;
+                lastScoreTime = now;
+                
+                // Increase game speed gradually, but only during active gameplay
+                if (score % 300 === 0) {  // Less frequent speed increases (was 250)
+                    gameSpeed += 0.08;     // Smaller increment (was 0.1)
+                }
+            }
+        }
+
+        // Spawn functions
+        // Modify spawnObstacle function to prevent cactus spawning under platforms
+        function spawnObstacle() {
+            const now = Date.now();
+            // Increased spawn rate with a time-based check
+            if (now - lastObstacleTime > 1500 && Math.random() < 0.01) {
+                lastObstacleTime = now;
+                
+                // Decide if we spawn 1 or 2 cacti (50% chance for 2)
+                const spawnDouble = Math.random() < 0.5;
+                const cactusCount = spawnDouble ? 2 : 1;
+                
+                const obstaclePositions = [];
+                
+                for (let i = 0; i < cactusCount; i++) {
+                    // Decide between small and large cactus type
+                    const isLargeCactus = Math.random() < 0.5;
+                    
+                    // Different dimensions based on cactus type
+                    let width, height;
+                    
+                    if (isLargeCactus) {
+                        height = (100 + Math.random() * 30) * 2; // 200-260px tall (doubled)
+                        width = (50 + Math.random() * 20) * 1.4;  // 70-98px wide (40% wider)
+                    } else {
+                        height = (60 + Math.random() * 20) * 2 * 0.63;  // 75.6-100.8px tall
+                        width = (30 + Math.random() * 15) * 1.4;  // 42-63px wide
+                    }
+                    
+                    const offsetX = i * (width + 20); // Gap between cacti
+                    const x = canvas.width + offsetX;
+                    const y = canvas.height - height - 10;
+                    
+                    // Create potential obstacle object
+                    const potentialObstacle = {
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: height
+                    };
+                    
+                    // Check if cactus blocks access to any platform
+                    let blocksAccess = false;
+                    
+                    for (let j = 0; j < platforms.length; j++) {
+                        const platform = platforms[j];
+                        
+                        // Define the safe zone below platform (from platform top to platform bottom + double platform height)
+                        const safeZoneLeft = platform.x - width;
+                        const safeZoneRight = platform.x + platform.width;
+                        const safeZoneTop = platform.y; 
+                        const safeZoneBottom = platform.y + platform.height * 3;
+                        
+                        // Check if cactus would be in the safe zone
+                        if (potentialObstacle.x + potentialObstacle.width > safeZoneLeft && 
+                            potentialObstacle.x < safeZoneRight) {
+                            
+                            // Check vertical overlap with safe zone
+                            if (potentialObstacle.y < safeZoneBottom && 
+                                potentialObstacle.y + potentialObstacle.height > safeZoneTop) {
+                                blocksAccess = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Only add if it doesn't block platform access
+                    if (!blocksAccess) {
+                        obstaclePositions.push({
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            type: isLargeCactus ? 'large-cactus' : 'small-cactus'
+                        });
+                    }
+                }
+                
+                // Add all valid obstacles
+                obstacles = obstacles.concat(obstaclePositions);
+            }
+        }
+
+        // Update spawnEnemy function to move flames down
+        function spawnEnemy() {
+            const now = Date.now();
+            // Increased spawn rate with a time-based control
+            if (now - lastEnemyTime > 2000 && Math.random() < 0.015) {
+                lastEnemyTime = now;
+                
+                const enemyType = Math.floor(Math.random() * 3); // 0: snake, 1: flame, 2: vulture
+                
+                // Set enemy dimensions
+                let width, height;
+                
+                // Size adjustments based on enemy type
+                switch(enemyType) {
+                    case 0: // Snake - elongated by 30% width and now 12% taller
+                        width = 78;  // 60 * 1.3 = 78
+                        height = 67; // 60 * 1.12 = 67.2, rounded to 67
+                        break;
+                    case 1: // Flame
+                        width = 60;
+                        height = 60;
+                        break;
+                    case 2: // Vulture
+                        width = 90;
+                        height = 90;
+                        break;
+                }
+                
+                let y;
+                
+                // Different enemy types have different y positions
+                switch (enemyType) {
+                    case 0: // Snake - ground level
+                        y = canvas.height - height - 20; // Adjust for ground height
+                        break;
+                    case 1: // Flame - move down slightly
+                        y = canvas.height - 100 - Math.random() * 120; // Was starting at 120px from bottom
+                        break;
+                    case 2: // Vulture - adjusted to match platform range
+                        y = canvas.height - 120 - Math.random() * 200; // 120-320 range
+                        break;
+                }
+                
+                // For snakes, check if they would overlap with any obstacle
+                if (enemyType === 0) {
+                    // Check for collision with obstacles
+                    const potentialEnemy = {
+                        x: canvas.width,
+                        y: y,
+                        width: width,
+                        height: height
+                    };
+                    
+                    // Don't spawn if it would overlap with an obstacle
+                    for (let i = 0; i < obstacles.length; i++) {
+                        if (checkCollision(potentialEnemy, obstacles[i])) {
+                            return; // Skip spawning this enemy
+                        }
+                    }
+                }
+                
+                // Add animation frame tracking for enemies
+                const frameCount = enemyType === 2 ? 3 : 2; // Vultures have 3 frames, others have 2
+                
+                // Adjust animation speeds by enemy type
+                let frameDuration;
+                switch(enemyType) {
+                    case 0: // Snake - slower animation (was 200)
+                        frameDuration = 700; // Much slower animation for snake
+                        break;
+                    case 1: // Flame - keep medium speed
+                        frameDuration = 200;
+                        break;
+                    case 2: // Vulture - keep current speed
+                        frameDuration = 500;
+                        break;
+                    default:
+                        frameDuration = 200;
+                }
+                
+                enemies.push({
+                    x: canvas.width,
+                    y: y,
+                    width: width,
+                    height: height,
+                    enemyType: enemyType,
+                    health: enemyType === 2 ? 2 : 1, // Vultures have 2 health
+                    animationFrame: 0,
+                    frameCount: frameCount,
+                    frameTimer: 0,
+                    frameDuration: frameDuration
+                });
+            }
+        }
+
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                const size = 2 + Math.random() * 3;
+                
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: size,
+                    color: color,
+                    life: 30 + Math.random() * 20
+                });
+            }
+        }
+
+        // Add function to spawn point pickups
+        function spawnPointPickup() {
+            // Keep the same spawn rate
+            if (Math.random() < 0.002) { // This gives roughly a 10% chance every 2 seconds at 60fps
+                
+                // Decide the point value and rarity
+                let pointValue, rarityType;
+                const pointRoll = Math.random();
+                
+                if (pointRoll < 0.6) {
+                    pointValue = 5;
+                    rarityType = 'common';  // 60% chance for 5 points
+                } else if (pointRoll < 0.9) {
+                    pointValue = 10;
+                    rarityType = 'rare';    // 30% chance for 10 points
+                } else {
+                    pointValue = 25;
+                    rarityType = 'epic';    // 10% chance for 25 points
+                }
+                
+                // Size similar to flame (60x60)
+                const width = 50;
+                const height = 50;
+                
+                // Determine position
+                let x = canvas.width; // Start from right side
+                let y;
+                
+                // Determine if we should place it on a platform or in mid-air
+                const onPlatform = Math.random() < 0.5; // 50% chance on platform
+                
+                if (onPlatform && platforms.length > 0) {
+                    // Choose a random platform
+                    const platformIndex = Math.floor(Math.random() * platforms.length);
+                    const platform = platforms[platformIndex];
+                    
+                    // Position just above the platform
+                    y = platform.y - height - 5;
+                    
+                    // Check if this platform is going off screen soon
+                    if (platform.x < canvas.width / 2) {
+                        // Skip spawning if platform is too close to edge
+                        return;
+                    }
+                } else {
+                    // Random position in jumpable area (between 180px and 400px from bottom)
+                    y = canvas.height - 200 - Math.random() * 220;
+                }
+                
+                // Create the point pickup
+                pointPickups.push({
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    pointValue: pointValue,
+                    rarityType: rarityType, // Add the rarity type
+                    // Add bob animation
+                    bobOffset: 0,
+                    bobDirection: 1,
+                    // Add color based on point value
+                    color: pointValue === 5 ? '#ffcc00' : (pointValue === 10 ? '#00ccff' : '#ff00ff')
+                });
+            }
+        }
+
+        // Update shoot function to make bullets square
+        // Update shoot function to play sound
+        function shoot() {
+            const now = Date.now();
+            if (now - player.lastShot > player.shootCooldown) {
+                // Use the adjustable bulletOffsetY property
+                // Make bullet square by setting height equal to width
+                const bulletSize = 20; // Use this for both width and height
+                bullets.push({
+                    x: player.x + player.width + 15,
+                    y: player.y + player.bulletOffsetY,
+                    width: bulletSize,
+                    height: bulletSize, // Now bullet is square (was 8)
+                    speed: 12
+                });
+                
+                // Play shoot sound
+                playSound(sounds.effects.shoot);
+                
+                player.lastShot = now;
+            }
+        }
+
+        // Update the updatePlayer function to fix the platform movement issue
+        // Update the updatePlayer function to play jump sound
+        function updatePlayer() {
+            // Store previous Y position for platform collision
+            player.previousY = player.y;
+            
+            // Handle movement
+            if (player.isMovingLeft && player.x > 0) {
+                player.x -= player.moveSpeed;
+            }
+            if (player.isMovingRight && player.x < canvas.width - player.width) {
+                player.x += player.moveSpeed;
+            }
+            
+            // Flag to track if player is on a platform
+            let onPlatform = false;
+            let platformIndex = -1;
+            
+            // First check if player was already on a platform in the previous frame
+            for (let i = 0; i < platforms.length; i++) {
+                const platform = platforms[i];
+                
+                // Check if player is directly above a platform, not falling, and within platform bounds
+                if (player.velocityY >= 0 &&
+                    player.y + player.height === platform.lastY && 
+                    player.x + player.width > platform.x && 
+                    player.x < platform.x + platform.width) {
+                    
+                    // Player was on this platform in previous frame
+                    onPlatform = true;
+                    platformIndex = i;
+                    break;
+                }
+            }
+            
+            // Apply gravity with terminal velocity limit (only if not on platform)
+            if (!onPlatform || player.dropping) {
+                player.velocityY = Math.min(player.velocityY + player.gravity, player.terminalVelocity);
+                player.y += player.velocityY;
+                
+                // Reset platform tracking if player is jumping/falling
+                onPlatform = false;
+                platformIndex = -1;
+            }
+            
+            // Check if player has landed on a platform (one-way collision)
+            // Skip platform collision if player is pressing down to drop through
+            if (!player.dropping) {
+                for (let i = 0; i < platforms.length; i++) {
+                    const platform = platforms[i];
+                    
+                    // Only check platforms if player is falling down
+                    if (player.velocityY >= 0) {
+                        // Player's feet positions using hitbox
+                        const playerFeet = player.y + player.hitboxOffsetY + player.hitboxHeight;
+                        const prevPlayerFeet = player.previousY + player.hitboxOffsetY + player.hitboxHeight;
+                        
+                        // Player's horizontal hitbox edges
+                        const playerLeft = player.x + player.hitboxOffsetX;
+                        const playerRight = player.x + player.hitboxOffsetX + player.hitboxWidth;
+                        
+                        // Only collide if coming from above
+                        if (prevPlayerFeet <= platform.y && 
+                            playerFeet >= platform.y &&
+                            playerRight > platform.x && 
+                            playerLeft < platform.x + platform.width) {
+                            
+                            // Land on the platform
+                            player.y = platform.y - player.hitboxOffsetY - player.hitboxHeight;
+                            player.jumping = false;
+                            player.velocityY = 0;
+                            onPlatform = true;
+                            platformIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If player is on a moving platform, adjust position based on platform movement
+            if (onPlatform && platformIndex !== -1) {
+                const platform = platforms[platformIndex];
+                
+                // Force player to stay on platform at all times when standing on it
+                player.y = platform.y - player.height;
+                player.jumping = false;
+                player.velocityY = 0;
+                
+                // If platform is moving, animate slow rise/fall to make it look smoother
+                if (platform.verticalMovement) {
+                    // Visual smoothing effect
+                    const transitionSpeed = 0.25; // Adjust this value for smoother/faster transitions
+                    const targetY = platform.y - player.height;
+                    
+                    // If there's a significant difference, smooth it out
+                    if (Math.abs(player.y - targetY) > 1) {
+                        player.y = player.y + (targetY - player.y) * transitionSpeed;
+                    } else {
+                        player.y = targetY;
+                    }
+                }
+            }
+            
+            // Check if player has landed on the ground - adjusted for larger character
+            if (player.y >= canvas.height - player.height - 20) { // 20 is the ground height
+                player.y = canvas.height - player.height - 20;
+                player.jumping = false;
+                player.velocityY = 0;
+            }
+            
+            // Add jump sound when player jumps
+            if (player.jumping && player.velocityY < 0) {
+                // Only play the sound at the start of the jump (when velocity is negative)
+                // and if this is a new jump (not already playing)
+                if (player.previousY === player.y + player.velocityY) {
+                    playSound(sounds.effects.jump);
+                }
+            }
+            
+            // Add platform landing sound
+            if (!player.jumping && player.previousY !== player.y && player.velocityY === 0) {
+                // We've just landed on something
+                playSound(sounds.effects.platformLand, 0.5);
+            }
+            
+            // Handle shooting
+            if (player.isShooting) {
+                shoot();
+            }
+        }
+
+        function updateObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= gameSpeed;
+                
+                // Remove obstacles that go off screen
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                // Animation update
+                enemy.frameTimer += 16; // Assume ~60fps (16ms per frame)
+                if (enemy.frameTimer >= enemy.frameDuration) {
+                    enemy.animationFrame = (enemy.animationFrame + 1) % enemy.frameCount;
+                    enemy.frameTimer = 0;
+                }
+                
+                // Base movement speed - all enemies keep moving left
+                let enemySpeed = Math.max(gameSpeed, 2); // Ensure minimum speed of 2
+                
+                // Vultures move faster by default
+                if (enemy.enemyType === 2) {
+                    enemySpeed += 2;
+                }
+                
+                // Special enemy behavior
+                switch (enemy.enemyType) {
+                    case 0: // Snake - slithers towards player if in frame
+                        // Add slithering movement regardless of position
+                        if (!enemy.slitherOffset) {
+                            enemy.slitherOffset = 0;
+                            enemy.slitherDirection = 1;
+                        }
+                        
+                        // Slither effect (small up and down movement)
+                        enemy.slitherOffset += 0.2 * enemy.slitherDirection;
+                        if (Math.abs(enemy.slitherOffset) > 5) {
+                            enemy.slitherDirection *= -1;
+                        }
+                        
+                        // Only track player if to the right of player
+                        if (enemy.x > player.x + player.width) {
+                            // If snake and player are at different heights and snake is on ground,
+                            // try to occasionally jump towards player
+                            if (Math.random() < 0.01 && enemy.y === canvas.height - enemy.height - 20) {
+                                // Random small jump
+                                enemy.velocityY = -8 - Math.random() * 4;
+                            }
+                            
+                            // Accelerate snake when it sees the player
+                            enemySpeed += 0.5;
+                        } 
+                        // If snake has passed the player, set velocityY to 0 to prevent jumping
+                        else if (enemy.velocityY < 0) {
+                            enemy.velocityY = 0;
+                        }
+                        
+                        // Apply gravity to snakes
+                        if (!enemy.velocityY) enemy.velocityY = 0;
+                        
+                        enemy.velocityY += 0.5; // Gravity
+                        enemy.y += enemy.velocityY;
+                        
+                        // Keep snakes on ground
+                        if (enemy.y > canvas.height - enemy.height - 20) {
+                            enemy.y = canvas.height - enemy.height - 20;
+                            enemy.velocityY = 0;
+                        }
+                        
+                        // Ensure snake always moves at least 2 pixels per frame to the left 
+                        enemy.x -= Math.max(enemySpeed, 2);
+                        break;
+                        
+                    case 1: // Flame - bounces
+                        if (Math.random() < 0.05) {
+                            enemy.y += Math.random() < 0.5 ? 5 : -5;
+                        }
+                        // Keep in bounds
+                        if (enemy.y < 0) enemy.y = 0;
+                        if (enemy.y > canvas.height - enemy.height - 20) {
+                            enemy.y = canvas.height - enemy.height - 20;
+                        }
+                        
+                        // Move flame left
+                        enemy.x -= enemySpeed;
+                        break;
+                        
+                    case 2: // Vulture - tracks player vertically only if still to the right of player
+                        if (enemy.x > player.x + player.width) {
+                            // Calculate vertical distance to player
+                            const verticalDifference = (player.y + player.height/2) - (enemy.y + enemy.height/2);
+                            
+                            // Move toward player vertically, but slowly (tracking behavior)
+                            if (Math.abs(verticalDifference) > 10) { // Only move if difference is significant
+                                enemy.y += verticalDifference > 0 ? 1.5 : -1.5; // Slow vertical tracking
+                            }
+                        }
+                        
+                        // Keep in bounds
+                        if (enemy.y < 0) enemy.y = 0;
+                        if (enemy.y > canvas.height - enemy.height - 20) {
+                            enemy.y = canvas.height - enemy.height - 20;
+                        }
+                        
+                        // Move vulture left
+                        enemy.x -= enemySpeed;
+                        break;
+                }
+                
+                // Remove enemies that go off screen
+                if (enemy.x + enemy.width < 0) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        // Update updateBullets function to award different points based on enemy type
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].x += bullets[i].speed;
+                
+                // Check for collision with enemies
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (checkCollision(bullets[i], enemies[j])) {
+                        // Create particles for hit
+                        createParticles(
+                            bullets[i].x, 
+                            bullets[i].y, 
+                            sprites.colors.enemies[getEnemyTypeString(enemies[j].enemyType)], 
+                            5
+                        );
+                        
+                        // Play hit sound
+                        playSound(sounds.effects.hit, 0.5);
+                        
+                        // Remove bullet
+                        bullets.splice(i, 1);
+                        
+                        // Damage enemy
+                        enemies[j].health--;
+                        
+                        // Remove enemy if health reaches 0
+                        if (enemies[j].health <= 0) {
+                            createParticles(
+                                enemies[j].x + enemies[j].width / 2, 
+                                enemies[j].y + enemies[j].height / 2, 
+                                sprites.colors.enemies[getEnemyTypeString(enemies[j].enemyType)], 
+                                10
+                            );
+                            
+                            // Play appropriate explosion sound based on enemy type
+                            const enemyType = getEnemyTypeString(enemies[j].enemyType);
+                            playSound(sounds.effects.explosion[enemyType]);
+                            
+                            // Award different points based on enemy type
+                            let pointsAwarded = 0;
+                            switch(enemies[j].enemyType) {
+                                case 0: // Snake (medium)
+                                    pointsAwarded = 10;
+                                    break;
+                                case 1: // Flame (easiest)
+                                    pointsAwarded = 5;
+                                    break;
+                                case 2: // Vulture (hardest)
+                                    pointsAwarded = 20;
+                                    break;
+                                default:
+                                    pointsAwarded = 5;
+                            }
+                            
+                            // Add points to score
+                            score += pointsAwarded;
+                            scoreElement.textContent = score;
+                            
+                            // Create a point indicator text that floats up and fades out
+                            createPointIndicator(
+                                enemies[j].x + enemies[j].width / 2,
+                                enemies[j].y,
+                                pointsAwarded
+                            );
+                            
+                            enemies.splice(j, 1);
+                        }
+                        break; // Bullet already removed
+                    }
+                }
+                
+                // Remove bullets that go off screen
+                if (i >= 0 && bullets[i] && bullets[i].x > canvas.width) {
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+
+        // Add a new function to create floating point indicators
+        function createPointIndicator(x, y, points) {
+            // Create a new indicator object
+            const indicator = {
+                x: x,
+                y: y,
+                points: points,
+                life: 40, // How long the indicator will live
+                velocity: -1.5 // Upward movement speed
+            };
+            
+            // Add to a new array if it doesn't exist yet
+            if (!window.pointIndicators) {
+                window.pointIndicators = [];
+            }
+            
+            window.pointIndicators.push(indicator);
+        }
+
+        // Update drawPointIndicators function
+        function drawPointIndicators() {
+            if (!window.pointIndicators) return;
+            
+            // Draw each point indicator
+            for (let i = window.pointIndicators.length - 1; i >= 0; i--) {
+                const indicator = window.pointIndicators[i];
+                
+                // Move indicator up
+                indicator.y += indicator.velocity;
+                
+                // Decrease life
+                indicator.life--;
+                
+                // Calculate opacity based on life
+                const opacity = indicator.life / 40;
+                
+                // Draw the text
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`+${indicator.points}`, indicator.x, indicator.y);
+                
+                // Remove if life is over
+                if (indicator.life <= 0) {
+                    window.pointIndicators.splice(i, 1);
+                }
+            }
+        }
+
+        // Add function to update point pickups
+        // Update updatePointPickups function to play pickup sounds
+        function updatePointPickups() {
+            for (let i = pointPickups.length - 1; i >= 0; i--) {
+                // Move with game speed
+                pointPickups[i].x -= gameSpeed;
+                
+                // Bob animation (gentle up and down movement)
+                pointPickups[i].bobOffset += 0.1 * pointPickups[i].bobDirection;
+                if (Math.abs(pointPickups[i].bobOffset) > 5) {
+                    pointPickups[i].bobDirection *= -1;
+                }
+                
+                // Check collision with player
+                if (checkCollision(player, pointPickups[i])) {
+                    // Award points
+                    score += pointPickups[i].pointValue;
+                    scoreElement.textContent = score;
+                    
+                    // Play pickup sound based on rarity
+                    playSound(sounds.effects.pickup[pointPickups[i].rarityType]);
+                    
+                    // Create particles with color based on rarity
+                    let particleColor;
+                    
+                    // Change color based on rarity
+                    switch(pointPickups[i].rarityType) {
+                        case 'common':
+                            particleColor = '#ffffff'; // White color for common
+                            break;
+                        case 'rare':
+                            particleColor = '#000000'; // Black color for rare
+                            break;
+                        case 'epic':
+                            particleColor = '#ffd700'; // Gold color for epic
+                            break;
+                        default:
+                            particleColor = pointPickups[i].color; // Fallback to existing color
+                    }
+                    
+                    // Create particles with the appropriate color
+                    createParticles(
+                        pointPickups[i].x + pointPickups[i].width / 2,
+                        pointPickups[i].y + pointPickups[i].height / 2,
+                        particleColor,
+                        15
+                    );
+                    
+                    // Remove the pickup
+                    pointPickups.splice(i, 1);
+                    continue;
+                }
+                
+                // Remove if off screen
+                if (pointPickups[i].x + pointPickups[i].width < 0) {
+                    pointPickups.splice(i, 1);
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // Helper function for enemy type string
+        function getEnemyTypeString(type) {
+            switch (type) {
+                case 0: return 'snake';
+                case 1: return 'flame';
+                case 2: return 'vulture';
+                default: return 'snake';
+            }
+        }
+
+        // Collision detection - Update to use hitbox dimensions for player
+        function checkCollision(obj1, obj2) {
+            // Special case for player (obj1)
+            if (obj1 === player) {
+                // Use player's hitbox dimensions and offsets
+                return (player.x + player.hitboxOffsetX) < (obj2.x + obj2.width) &&
+                       (player.x + player.hitboxOffsetX + player.hitboxWidth) > obj2.x &&
+                       (player.y + player.hitboxOffsetY) < (obj2.y + obj2.height) &&
+                       (player.y + player.hitboxOffsetY + player.hitboxHeight) > obj2.y;
+            } 
+            // Special case if obj2 is player
+            else if (obj2 === player) {
+                // Use player's hitbox dimensions and offsets
+                return obj1.x < (player.x + player.hitboxOffsetX + player.hitboxWidth) &&
+                       (obj1.x + obj1.width) > (player.x + player.hitboxOffsetX) &&
+                       obj1.y < (player.y + player.hitboxOffsetY + player.hitboxHeight) &&
+                       (obj1.y + obj1.height) > (player.y + player.hitboxOffsetY);
+            }
+            // Normal collision for non-player objects
+            else {
+                return obj1.x < obj2.x + obj2.width &&
+                       obj1.x + obj1.width > obj2.x &&
+                       obj1.y < obj2.y + obj2.height &&
+                       obj1.y + obj1.height > obj2.y;
+            }
+        }
+
+        function checkPlayerCollisions() {
+            // Check collision with obstacles
+            for (let i = 0; i < obstacles.length; i++) {
+                if (checkCollision(player, obstacles[i])) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Check collision with enemies
+            for (let i = 0; i < enemies.length; i++) {
+                if (checkCollision(player, enemies[i])) {
+                    gameOver();
+                    return;
+                }
+            }
+        }
+
+        // Draw functions
+        // Update the fallback drawing for the player
+        function drawPlayer() {
+            // Determine the player's current state
+            let playerState;
+            
+            if (player.jumping) {
+                playerState = 'jumping';
+            } else {
+                // Always use running animation, alternating between frames at a slower rate
+                // Change 300 to a higher number for slower animation (e.g. 500 for slower, 1000 for even slower)
+                playerState = Math.floor(Date.now() / 300) % 2 === 0 ? 'running1' : 'running2';
+            }
+            
+            // If sprites are loaded, use them
+            if (isImageLoaded(sprites.images.player[playerState])) {
+                ctx.drawImage(
+                    sprites.images.player[playerState],
+                    player.x,
+                    player.y,
+                    player.width,
+                    player.height
+                );
+            } else {
+                // Fallback to shape drawing - scale up by 50%
+                ctx.fillStyle = sprites.colors.player;
+                
+                // Body
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // Head - larger
+                ctx.fillRect(player.x - 15, player.y, 42, 42); // 50% larger
+                
+                // Arms - thicker
+                ctx.fillRect(player.x - 15, player.y + 52, 15, 60); // 50% larger
+                
+                // Gun
+                ctx.fillStyle = '#444';
+                ctx.fillRect(player.x + player.width - 15, player.y + 42, 45, 15); // 50% larger
+                
+                // Legs - change based on state
+                if (playerState === 'standing') {
+                    // Regular standing legs
+                    ctx.fillStyle = sprites.colors.player;
+                    ctx.fillRect(player.x + 15, player.y + player.height - 52, 18, 52); // 50% larger
+                    ctx.fillRect(player.x + 52, player.y + player.height - 52, 18, 52); // 50% larger
+                } else if (playerState === 'jumping') {
+                    // Spread legs for jumping
+                    ctx.fillStyle = sprites.colors.player;
+                    ctx.fillRect(player.x + 7, player.y + player.height - 45, 18, 45); // 50% larger
+                    ctx.fillRect(player.x + 60, player.y + player.height - 45, 18, 45); // 50% larger
+                } else if (playerState === 'running1') {
+                    // Running pose 1
+                    ctx.fillStyle = sprites.colors.player;
+                    ctx.fillRect(player.x + 22, player.y + player.height - 52, 18, 52); // 50% larger, back leg
+                    ctx.fillRect(player.x + 52, player.y + player.height - 37, 18, 37); // 50% larger, forward leg bent
+                } else if (playerState === 'running2') {
+                    // Running pose 2
+                    ctx.fillStyle = sprites.colors.player;
+                    ctx.fillRect(player.x + 22, player.y + player.height - 37, 18, 37); // 50% larger, back leg bent
+                    ctx.fillRect(player.x + 52, player.y + player.height - 52, 18, 52); // 50% larger, forward leg
+                }
+            }
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = sprites.colors.obstacle;
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
+                
+                // Different drawing based on obstacle type
+                if (obstacle.type === 'small-cactus') {
+                    // If sprite is loaded, use it
+                    if (isImageLoaded(sprites.images.obstacles.smallCactus)) {
+                        ctx.drawImage(
+                            sprites.images.obstacles.smallCactus, 
+                            obstacle.x, 
+                            obstacle.y, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                    } else {
+                        // Fallback to drawing with shapes
+                        // Main body
+                        ctx.fillRect(
+                            obstacle.x, 
+                            obstacle.y, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                        
+                        // Left arm
+                        ctx.fillRect(
+                            obstacle.x - 10,
+                            obstacle.y + obstacle.height * 0.3,
+                            15,
+                            10
+                        );
+                    }
+                } else if (obstacle.type === 'large-cactus') {
+                    // If sprite is loaded, use it
+                    if (isImageLoaded(sprites.images.obstacles.largeCactus)) {
+                        ctx.drawImage(
+                            sprites.images.obstacles.largeCactus, 
+                            obstacle.x, 
+                            obstacle.y, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                    } else {
+                        // Fallback to drawing with shapes
+                        // Main body
+                        ctx.fillRect(
+                            obstacle.x, 
+                            obstacle.y, 
+                            obstacle.width, 
+                            obstacle.height
+                        );
+                        
+                        // Left arm
+                        ctx.fillRect(
+                            obstacle.x - 15,
+                            obstacle.y + obstacle.height * 0.3,
+                            20,
+                            12
+                        );
+                        
+                        // Right arm
+                        ctx.fillRect(
+                            obstacle.x + obstacle.width - 5,
+                            obstacle.y + obstacle.height * 0.4,
+                            20,
+                            12
+                        );
+                    }
+                }
+                
+                // Add cactus spikes for both types (if not using images)
+                if (!isImageLoaded(sprites.images.obstacles.smallCactus) && 
+                    !isImageLoaded(sprites.images.obstacles.largeCactus)) {
+                    ctx.fillStyle = '#555';
+                    for (let j = 0; j < 8; j++) {
+                        ctx.fillRect(
+                            obstacle.x + obstacle.width * Math.random(),
+                            obstacle.y + obstacle.height * Math.random(),
+                            3,
+                            3
+                        );
+                    }
+                    ctx.fillStyle = sprites.colors.obstacle;
+                }
+            }
+        }
+
+        function drawBullets() {
+            for (let i = 0; i < bullets.length; i++) {
+                const bullet = bullets[i];
+                
+                // If bullet image is loaded, use it
+                if (isImageLoaded(sprites.images.bullet)) {
+                    ctx.drawImage(
+                        sprites.images.bullet,
+                        bullet.x,
+                        bullet.y,
+                        bullet.width,
+                        bullet.height
+                    );
+                } else {
+                    // Fallback to the default yellow rectangle
+                    ctx.fillStyle = sprites.colors.bullet;
+                    ctx.fillRect(
+                        bullet.x, 
+                        bullet.y, 
+                        bullet.width, 
+                        bullet.height
+                    );
+                }
+            }
+        }
+
+        // Modify the drawEnemy function to fix snake and flame display issues
+        function drawEnemy(enemy) {
+            // Draw health bar for enemies with more than 1 health
+            if (enemy.health > 1) {
+                const healthBarWidth = enemy.width;
+                const healthBarHeight = 5;
+                const healthPercentage = enemy.health / 2; // Assuming max health is 2
+
+                // Health bar background
+                ctx.fillStyle = '#333';
+                ctx.fillRect(
+                    enemy.x, 
+                    enemy.y - healthBarHeight - 2, 
+                    healthBarWidth, 
+                    healthBarHeight
+                );
+
+                // Health bar fill
+                ctx.fillStyle = '#0f0';
+                ctx.fillRect(
+                    enemy.x, 
+                    enemy.y - healthBarHeight - 2, 
+                    healthBarWidth * healthPercentage, 
+                    healthBarHeight
+                );
+            }
+
+            switch (enemy.enemyType) {
+                case 0: // Snake
+                    // If sprites are loaded, use them
+                    const snakeImg = enemy.animationFrame === 0 ? 
+                                    sprites.images.enemies.snake1 : 
+                                    sprites.images.enemies.snake2;
+                    
+                    // Apply slithering offset to y position
+                    const snakeY = enemy.y + (enemy.slitherOffset || 0);
+                    
+                    if (isImageLoaded(snakeImg)) {
+                        ctx.drawImage(
+                            snakeImg,
+                            enemy.x,
+                            snakeY,
+                            enemy.width,
+                            enemy.height
+                        );
+                    } else {
+                        // Fallback to shape drawing
+                        ctx.fillStyle = sprites.colors.enemies.snake;
+                        
+                        // Main body
+                        ctx.fillRect(
+                            enemy.x,
+                            snakeY,
+                            enemy.width,
+                            enemy.height
+                        );
+                        
+                        // Add eyes
+                        ctx.fillStyle = 'white';
+                        const eyeSize = enemy.width * 0.1;
+                        ctx.fillRect(
+                            enemy.x + enemy.width * 0.8,
+                            snakeY + enemy.height * 0.2,
+                            eyeSize,
+                            eyeSize
+                        );
+                        
+                        // Add tongue
+                        ctx.fillStyle = 'red';
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width, snakeY + enemy.height * 0.5);
+                        ctx.lineTo(enemy.x + enemy.width + enemy.width * 0.2, snakeY + enemy.height * 0.4);
+                        ctx.lineTo(enemy.x + enemy.width + enemy.width * 0.2, snakeY + enemy.height * 0.6);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 1: // Flame
+                    // If sprites are loaded, use them
+                    const flameImg = enemy.animationFrame === 0 ? 
+                                   sprites.images.enemies.flame1 : 
+                                   sprites.images.enemies.flame2;
+                    
+                    if (isImageLoaded(flameImg)) {
+                        ctx.drawImage(
+                            flameImg,
+                            enemy.x,
+                            enemy.y,
+                            enemy.width,
+                            enemy.height
+                        );
+                    } else {
+                        // Fallback to drawing flame with shapes
+                        ctx.fillStyle = sprites.colors.enemies.flame;
+                        
+                        // Flickering effect
+                        const flicker = Math.sin(Date.now() / 100) * 5;
+                        
+                        // Base of flame
+                        ctx.fillRect(
+                            enemy.x + enemy.width * 0.25,
+                            enemy.y + enemy.height * 0.7,
+                            enemy.width * 0.5,
+                            enemy.height * 0.3
+                        );
+                        
+                        // Flame body
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width * 0.1, enemy.y + enemy.height * 0.7);
+                        ctx.lineTo(enemy.x + enemy.width * 0.5, enemy.y + flicker);
+                        ctx.lineTo(enemy.x + enemy.width * 0.9, enemy.y + enemy.height * 0.7);
+                        ctx.fill();
+                        
+                        // Inner flame (lighter color)
+                        ctx.fillStyle = '#ff7700';
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width * 0.3, enemy.y + enemy.height * 0.7);
+                        ctx.lineTo(enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.3 + flicker);
+                        ctx.lineTo(enemy.x + enemy.width * 0.7, enemy.y + enemy.height * 0.7);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 2: // Vulture - ADDING IMPLEMENTATION HERE
+                    // Get the vulture image based on animation frame
+                    let vultureImg;
+                    if (enemy.animationFrame === 0) {
+                        vultureImg = sprites.images.enemies.vulture1;
+                    } else if (enemy.animationFrame === 1) {
+                        vultureImg = sprites.images.enemies.vulture2;
+                    } else {
+                        vultureImg = sprites.images.enemies.vulture3;
+                    }
+                    
+                    if (isImageLoaded(vultureImg)) {
+                        // Save the current canvas state
+                        ctx.save();
+                        
+                        // Translate to the vulture's position plus its width
+                        ctx.translate(enemy.x + enemy.width, enemy.y);
+                        
+                        // Scale by -1 in x-direction to flip horizontally
+                        ctx.scale(-1, 1);
+                        
+                        // Draw the image at the origin (0,0) since we've translated
+                        ctx.drawImage(
+                            vultureImg,
+                            0,
+                            0,
+                            enemy.width,
+                            enemy.height
+                        );
+                        
+                        // Restore the canvas state
+                        ctx.restore();
+                    } else {
+                        // Save the current canvas state for flipping
+                        ctx.save();
+                        
+                        // Translate to vulture position plus width
+                        ctx.translate(enemy.x + enemy.width, enemy.y);
+                        
+                        // Scale by -1 in x-direction to flip horizontally
+                        ctx.scale(-1, 1);
+                        
+                        // All coordinates are now relative to (0,0) since we translated
+                        
+                        // Fallback to shape drawing
+                        ctx.fillStyle = sprites.colors.enemies.vulture;
+                        
+                        // Body - adjusted for flipped coordinates
+                        ctx.fillRect(
+                            enemy.width * 0.2,
+                            enemy.height * 0.3,
+                            enemy.width * 0.6,
+                            enemy.height * 0.4
+                        );
+                        
+                        // Head - adjusted for flipped coordinates
+                        ctx.beginPath();
+                        ctx.arc(
+                            enemy.width * 0.8,
+                            enemy.height * 0.3,
+                            enemy.width * 0.15,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // Beak - adjusted for flipped coordinates
+                        ctx.fillStyle = '#ff6600';
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.width * 0.95, enemy.height * 0.25);
+                        ctx.lineTo(enemy.width * 1.1, enemy.height * 0.3);
+                        ctx.lineTo(enemy.width * 0.95, enemy.height * 0.35);
+                        ctx.fill();
+                        
+                        // Wings - change position based on animation frame
+                        ctx.fillStyle = sprites.colors.enemies.vulture;
+                        
+                        // Different wing positions based on animation frame
+                        if (enemy.animationFrame === 0) {
+                            // Wings up - adjusted for flipped coordinates
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.3, enemy.height * 0.3);
+                            ctx.lineTo(0, 0);
+                            ctx.lineTo(enemy.width * 0.7, enemy.height * 0.3);
+                            ctx.fill();
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.4, enemy.height * 0.3);
+                            ctx.lineTo(enemy.width, 0);
+                            ctx.lineTo(enemy.width * 0.8, enemy.height * 0.3);
+                            ctx.fill();
+                        } else if (enemy.animationFrame === 1) {
+                            // Wings middle - adjusted for flipped coordinates
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.3, enemy.height * 0.3);
+                            ctx.lineTo(0, enemy.height * 0.4);
+                            ctx.lineTo(enemy.width * 0.7, enemy.height * 0.3);
+                            ctx.fill();
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.4, enemy.height * 0.3);
+                            ctx.lineTo(enemy.width, enemy.height * 0.4);
+                            ctx.lineTo(enemy.width * 0.8, enemy.height * 0.3);
+                            ctx.fill();
+                        } else {
+                            // Wings down - adjusted for flipped coordinates
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.3, enemy.height * 0.3);
+                            ctx.lineTo(0, enemy.height * 0.8);
+                            ctx.lineTo(enemy.width * 0.7, enemy.height * 0.3);
+                            ctx.fill();
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(enemy.width * 0.4, enemy.height * 0.3);
+                            ctx.lineTo(enemy.width, enemy.height * 0.8);
+                            ctx.lineTo(enemy.width * 0.8, enemy.height * 0.3);
+                            ctx.fill();
+                        }
+                        
+                        // Restore the canvas state
+                        ctx.restore();
+                    }
+                    break;
+            }
+        }
+
+        function drawEnemies() {
+            for (let i = 0; i < enemies.length; i++) {
+                drawEnemy(enemies[i]);
+            }
+        }
+
+        function drawParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 50; // Fade out as life decreases
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1; // Reset alpha
+        }
+
+        // Add function to draw point pickups
+        // Updated drawPointPickups function to not show numbers on image pickups
+        function drawPointPickups() {
+            for (let i = 0; i < pointPickups.length; i++) {
+                const pickup = pointPickups[i];
+                const drawY = pickup.y + pickup.bobOffset;
+                
+                // Choose the correct image based on rarity type
+                const pickupImg = sprites.images.pointPickups[pickup.rarityType];
+                
+                if (isImageLoaded(pickupImg)) {
+                    // Just draw the image without any text overlay
+                    ctx.drawImage(
+                        pickupImg,
+                        pickup.x,
+                        drawY,
+                        pickup.width,
+                        pickup.height
+                    );
+                    
+                    // No text is drawn on top of the images
+                } else {
+                    // Fallback with different colors and shapes based on rarity
+                    ctx.fillStyle = pickup.color;
+                    
+                    if (pickup.rarityType === 'common') {
+                        // Square for common
+                        ctx.fillRect(
+                            pickup.x,
+                            drawY,
+                            pickup.width,
+                            pickup.height
+                        );
+                    } else if (pickup.rarityType === 'rare') {
+                        // Circle for rare
+                        ctx.beginPath();
+                        ctx.arc(
+                            pickup.x + pickup.width/2,
+                            drawY + pickup.height/2,
+                            pickup.width/2,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    } else {
+                        // Star for epic
+                        const centerX = pickup.x + pickup.width/2;
+                        const centerY = drawY + pickup.height/2;
+                        const spikes = 5;
+                        const outerRadius = pickup.width/2;
+                        const innerRadius = pickup.width/4;
+                        
+                        ctx.beginPath();
+                        for (let j = 0; j < spikes * 2; j++) {
+                            const radius = j % 2 === 0 ? outerRadius : innerRadius;
+                            const angle = j * Math.PI / spikes;
+                            const x = centerX + Math.cos(angle) * radius;
+                            const y = centerY + Math.sin(angle) * radius;
+                            
+                            if (j === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    
+                    // Point value only shown on fallback shapes
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(
+                        pickup.pointValue.toString(),
+                        pickup.x + pickup.width / 2,
+                        drawY + pickup.height / 2
+                    );
+                }
+            }
+        }
+
+        // Update the drawGround function to show the full ground image
+        function drawGround() {
+            const groundHeight = 20; // Maintain consistent ground height
+            
+            if (isImageLoaded(sprites.images.ground)) {
+                // Get the natural dimensions of the ground image
+                const imgWidth = sprites.images.ground.width;
+                const imgHeight = sprites.images.ground.height;
+                
+                // Calculate how many times we need to repeat the image to cover the canvas width
+                const repetitions = Math.ceil(canvas.width / imgWidth);
+                
+                // Draw the ground image repeatedly across the width of the canvas
+                // while maintaining its original aspect ratio within the groundHeight
+                for (let i = 0; i < repetitions; i++) {
+                    // Scale the height to fit within groundHeight while preserving aspect ratio
+                    const drawHeight = groundHeight;
+                    const drawWidth = (imgWidth / imgHeight) * drawHeight;
+                    
+                    ctx.drawImage(
+                        sprites.images.ground,
+                        i * drawWidth,
+                        canvas.height - drawHeight,
+                        drawWidth,
+                        drawHeight
+                    );
+                }
+            } else {
+                // Fallback to solid color
+                ctx.fillStyle = sprites.colors.ground;
+                ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            }
+        }
+
+        // Add a drawBackground function
+        function drawBackground() {
+            if (isImageLoaded(sprites.images.background)) {
+                // Draw the background image covering the entire canvas
+                ctx.drawImage(sprites.images.background, 0, 0, canvas.width, canvas.height);
+            }
+            // If no background image, the canvas default background color will show
+        }
+
+        // Main game loop - update the existing gameLoop function
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the background first (always)
+            drawBackground();
+            
+            if (gameRunning) {
+                // Update game elements
+                updatePlayer();
+                updateObstacles();
+                updateEnemies();
+                updateBullets();
+                updateParticles();
+                updatePlatforms();
+                updatePointPickups();
+                checkPlayerCollisions();
+                
+                // Spawn new elements
+                spawnObstacle();
+                spawnEnemy();
+                spawnPointPickup();
+                
+                // Update score
+                updateScore();
+                
+                // Draw game elements
+                drawGround();
+                drawPlatforms();
+                drawObstacles();
+                drawPointPickups();
+                drawBullets();
+                drawEnemies();
+                drawPlayer();
+                drawParticles();
+                drawPointIndicators(); // Add this line to draw the point indicators
+            }
+            
+            // Continue game loop and store the frame ID
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize the game
+        initGame();
+
+        // Add sound system to the game
+        // Sound object to manage all game sounds
+        const sounds = {
+            // Sound effects
+            effects: {
+                jump: null,
+                shoot: null,
+                pickup: {
+                    common: null,
+                    rare: null,
+                    epic: null
+                },
+                explosion: {
+                    snake: null,
+                    flame: null,
+                    vulture: null
+                },
+                hit: null,
+                playerDeath: null,
+                platformLand: null,
+                buttonClick: null
+            },
+            // Background music
+            music: {
+                main: null
+            },
+            // Options
+            options: {
+                masterVolume: 0.7,
+                effectsVolume: 0.8,
+                musicVolume: 0.5,
+                muted: false,
+                musicMuted: false,
+                effectsMuted: false
+            },
+            // Loaded flag
+            loaded: false
+        };
+
+        // Function to load all sounds
+        function loadSounds() {
+            return new Promise(async (resolve) => {
+                try {
+                    // Helper function to load a sound
+                    function loadSound(src) {
+                        return new Promise((resolve) => {
+                            try {
+                                const audio = new Audio();
+                                audio.addEventListener('canplaythrough', () => resolve(audio));
+                                audio.addEventListener('error', () => {
+                                    console.warn(`Failed to load sound: ${src}`);
+                                    resolve(null);
+                                });
+                                audio.src = src;
+                                audio.load();
+                            } catch (err) {
+                                console.warn(`Error setting up sound: ${src}`, err);
+                                resolve(null);
+                            }
+                        });
+                    }
+
+                    // Load all sound effects
+                    sounds.effects.jump = await loadSound('sounds/jump.mp3');
+                    sounds.effects.shoot = await loadSound('sounds/shoot.mp3');
+                    sounds.effects.pickup.common = await loadSound('sounds/pickup_common.mp3');
+                    sounds.effects.pickup.rare = await loadSound('sounds/pickup_rare.mp3');
+                    sounds.effects.pickup.epic = await loadSound('sounds/pickup_epic.mp3');
+                    sounds.effects.explosion.snake = await loadSound('sounds/kill_snake.mp3');
+                    sounds.effects.explosion.flame = await loadSound('sounds/kill_flame.mp3');
+                    sounds.effects.explosion.vulture = await loadSound('sounds/kill_vulture.mp3');
+                    sounds.effects.hit = await loadSound('sounds/hit.mp3');
+                    sounds.effects.playerDeath = await loadSound('sounds/player_death.mp3');
+                    sounds.effects.platformLand = await loadSound('sounds/platform_land.mp3');
+                    sounds.effects.buttonClick = await loadSound('sounds/button_click.mp3');
+
+                    // Load background music
+                    sounds.music.main = await loadSound('sounds/music_main.mp3');
+                    
+                    // Set loop property for background music
+                    if (sounds.music.main) {
+                        sounds.music.main.loop = true;
+                    }
+
+                    // Try to load saved sound preferences from localStorage
+                    try {
+                        const savedOptions = localStorage.getItem('desertRunnerSoundOptions');
+                        if (savedOptions) {
+                            const parsedOptions = JSON.parse(savedOptions);
+                            sounds.options = { ...sounds.options, ...parsedOptions };
+                        }
+                    } catch (e) {
+                        console.warn("Could not load sound preferences:", e);
+                    }
+
+                    sounds.loaded = true;
+                    console.log('Sounds loading completed');
+                    resolve();
+                } catch (error) {
+                    console.error("Error in sound loading process:", error);
+                    sounds.loaded = false;
+                    resolve(); // Still resolve to continue the game
+                }
+            });
+        }
+
+        // Play a sound effect with volume control
+        function playSound(sound, volume = 1) {
+            if (!sound || sounds.options.muted || sounds.options.effectsMuted) return;
+            
+            try {
+                // Create a new instance of the sound to allow overlapping playback
+                const soundInstance = sound.cloneNode();
+                soundInstance.volume = volume * sounds.options.effectsVolume * sounds.options.masterVolume;
+                soundInstance.play();
+            } catch (e) {
+                console.warn("Error playing sound:", e);
+            }
+        }
+
+        // Enhanced playMusic function with better error handling and state checking
+        function playMusic(music) {
+            if (!music || sounds.options.muted || sounds.options.musicMuted) return;
+            
+            try {
+                // Ensure loop is set
+                music.loop = true;
+                
+                // Set volume before playing
+                music.volume = sounds.options.musicVolume * sounds.options.masterVolume;
+                
+                // Handle different readyState values
+                if (music.readyState >= 2) {
+                    // If paused or stopped, play it
+                    if (music.paused) {
+                        music.play().catch(e => {
+                            console.warn("Music play failed:", e);
+                        });
+                    }
+                } else {
+                    // If not ready, load it first then play
+                    music.addEventListener('canplaythrough', function playWhenReady() {
+                        if (!sounds.options.muted && !sounds.options.musicMuted) {
+                            music.play().catch(e => console.warn("Delayed music play failed:", e));
+                        }
+                        music.removeEventListener('canplaythrough', playWhenReady);
+                    }, { once: true });
+                    
+                    music.load();
+                }
+            } catch (e) {
+                console.warn("Error in playMusic function:", e);
+            }
+        }
+
+        // Stop music
+        function stopMusic(music) {
+            if (!music) return;
+            
+            try {
+                music.pause();
+                music.currentTime = 0;
+            } catch (e) {
+                console.warn("Error stopping music:", e);
+            }
+        }
+
+        // Toggle all sounds (mute/unmute)
+        function toggleMute() {
+            sounds.options.muted = !sounds.options.muted;
+            
+            if (sounds.options.muted) {
+                // Stop music when muting
+                if (sounds.music.main) {
+                    sounds.music.main.pause();
+                }
+            } else {
+                // Resume music if game is running and music isn't specifically muted
+                if (gameRunning && sounds.music.main && !sounds.options.musicMuted) {
+                    try {
+                        // Always start the music if we're unmuting during active gameplay
+                        sounds.music.main.currentTime = 0;
+                        playMusic(sounds.music.main);
+                    } catch (e) {
+                        console.warn("Error resuming music:", e);
+                    }
+                }
+            }
+            
+            // Save preferences
+            saveSoundOptions();
+            
+            // Update UI
+            updateSoundUI();
+        }
+
+        // Toggle music only
+        function toggleMusic() {
+            sounds.options.musicMuted = !sounds.options.musicMuted;
+            
+            if (sounds.options.musicMuted) {
+                // Stop music when muting music
+                if (sounds.music.main) {
+                    sounds.music.main.pause();
+                }
+            } else {
+                // Resume music if game is running and master isn't muted
+                if (sounds.music.main && !sounds.options.muted && gameRunning) {
+                    // Always restart the music from the beginning when unmuting during gameplay
+                    sounds.music.main.currentTime = 0;
+                    
+                    // Set volume before playing
+                    sounds.music.main.volume = sounds.options.musicVolume * sounds.options.masterVolume;
+                    
+                    // Use both methods to ensure playback starts
+                    sounds.music.main.play().catch(e => {
+                        console.warn("Direct play failed:", e);
+                        // If direct play fails, try again with a user interaction
+                        document.addEventListener('click', function resumeMusic() {
+                            sounds.music.main.play();
+                            document.removeEventListener('click', resumeMusic);
+                        }, { once: true });
+                    });
+                }
+            }
+            
+            // Save preferences
+            saveSoundOptions();
+            
+            // Update UI
+            updateSoundUI();
+        }
+
+        // Toggle sound effects only
+        function toggleEffects() {
+            sounds.options.effectsMuted = !sounds.options.effectsMuted;
+            
+            // Save preferences
+            saveSoundOptions();
+            
+            // Update UI
+            updateSoundUI();
+        }
+
+        // Change master volume
+        function setMasterVolume(value) {
+            sounds.options.masterVolume = value;
+            
+            // Adjust music volume if playing
+            if (sounds.music.main && !sounds.music.main.paused) {
+                sounds.music.main.volume = sounds.options.musicVolume * sounds.options.masterVolume;
+            }
+            
+            // Save preferences
+            saveSoundOptions();
+        }
+
+        // Change effects volume
+        function setEffectsVolume(value) {
+            sounds.options.effectsVolume = value;
+            
+            // Save preferences
+            saveSoundOptions();
+        }
+
+        // Change music volume
+        function setMusicVolume(value) {
+            sounds.options.musicVolume = value;
+            
+            // Adjust music volume if playing
+            if (sounds.music.main && !sounds.music.main.paused) {
+                sounds.music.main.volume = sounds.options.musicVolume * sounds.options.masterVolume;
+            }
+            
+            // Save preferences
+            saveSoundOptions();
+        }
+
+        // Save sound options to localStorage
+        function saveSoundOptions() {
+            try {
+                localStorage.setItem('desertRunnerSoundOptions', JSON.stringify(sounds.options));
+            } catch (e) {
+                console.warn("Could not save sound preferences:", e);
+            }
+        }
+
+        // Update the sound UI elements based on current settings
+        function updateSoundUI() {
+            // Update the settings screen UI elements
+            document.getElementById('master-volume-slider').value = sounds.options.masterVolume;
+            document.getElementById('effects-volume-slider').value = sounds.options.effectsVolume;
+            document.getElementById('music-volume-slider').value = sounds.options.musicVolume;
+            
+            // Update toggle buttons
+            document.getElementById('master-mute-button').textContent = sounds.options.muted ? 'Unmute All' : 'Mute All';
+            document.getElementById('music-mute-button').textContent = sounds.options.musicMuted ? 'Music: Off' : 'Music: On';
+            document.getElementById('effects-mute-button').textContent = sounds.options.effectsMuted ? 'SFX: Off' : 'SFX: On';
+        }
+
+        // Initialize sound controls
+        function initSoundControls() {
+            // Get the DOM elements
+            const settingsButton = document.getElementById('settings-button');
+            const settingsScreen = document.getElementById('settings-screen');
+            const closeButton = document.getElementById('close-settings-button');
+            
+            const masterVolumeSlider = document.getElementById('master-volume-slider');
+            const effectsVolumeSlider = document.getElementById('effects-volume-slider');
+            const musicVolumeSlider = document.getElementById('music-volume-slider');
+            
+            const masterMuteButton = document.getElementById('master-mute-button');
+            const musicMuteButton = document.getElementById('music-mute-button');
+            const effectsMuteButton = document.getElementById('effects-mute-button');
+            
+            // Add event listeners
+            settingsButton.addEventListener('click', () => {
+                // Play button click sound
+                playSound(sounds.effects.buttonClick, 1);
+                
+                // Store current game state
+                const wasRunning = gameRunning;
+                
+                // Pause game while settings are open
+                if (wasRunning) {
+                    gameRunning = false;
+                }
+                
+                // Show settings screen
+                settingsScreen.style.display = 'flex';
+                
+                // Make sure the profile display is updated
+                updateProfileDisplay();
+                
+                // Update UI based on current settings
+                updateSoundUI();
+                
+                // Store game state to resume later
+                settingsScreen.dataset.wasRunning = wasRunning.toString();
+                
+                // Store which screen was visible
+                settingsScreen.dataset.previousScreen = 'none';
+                if (startScreen.style.display === 'flex') {
+                    settingsScreen.dataset.previousScreen = 'start';
+                } else if (gameOverScreen.style.display === 'flex') {
+                    settingsScreen.dataset.previousScreen = 'gameover';
+                } else if (loginScreen.style.display === 'flex') {
+                    settingsScreen.dataset.previousScreen = 'login';
+                } else if (leaderboardScreen.style.display === 'flex') {
+                    settingsScreen.dataset.previousScreen = 'leaderboard';
+                }
+                
+                // Hide other screens while settings are open
+                startScreen.style.display = 'none';
+                gameOverScreen.style.display = 'none';
+                loginScreen.style.display = 'none';
+                leaderboardScreen.style.display = 'none';
+            });
+            
+            closeButton.addEventListener('click', () => {
+                // Play button click sound
+                playSound(sounds.effects.buttonClick, 1);
+                
+                // Hide settings screen
+                settingsScreen.style.display = 'none';
+                
+                // Handle music state correctly if game is resuming
+                const wasRunning = settingsScreen.dataset.wasRunning === 'true';
+                if (wasRunning && gameRunning) {
+                    // If muted or music muted, ensure music is stopped
+                    if (sounds.options.muted || sounds.options.musicMuted) {
+                        if (sounds.music.main && !sounds.music.main.paused) {
+                            sounds.music.main.pause();
+                        }
+                    } else {
+                        // Otherwise ensure music is playing
+                        if (sounds.music.main && sounds.music.main.paused) {
+                            playMusic(sounds.music.main);
+                        }
+                    }
+                }
+                
+                // Restore the previously visible screen
+                const previousScreen = settingsScreen.dataset.previousScreen;
+                if (previousScreen === 'start') {
+                    startScreen.style.display = 'flex';
+                } else if (previousScreen === 'gameover') {
+                    gameOverScreen.style.display = 'flex';
+                } else if (previousScreen === 'login') {
+                    loginScreen.style.display = 'flex';
+                } else if (previousScreen === 'leaderboard') {
+                    leaderboardScreen.style.display = 'flex';
+                } else {
+                    // Resume game if it was running before
+                    gameRunning = wasRunning;
+                }
+            });
+            
+            // Volume sliders
+            masterVolumeSlider.addEventListener('input', () => {
+                setMasterVolume(parseFloat(masterVolumeSlider.value));
+            });
+            
+            effectsVolumeSlider.addEventListener('input', () => {
+                setEffectsVolume(parseFloat(effectsVolumeSlider.value));
+            });
+            
+            musicVolumeSlider.addEventListener('input', () => {
+                setMusicVolume(parseFloat(musicVolumeSlider.value));
+            });
+            
+            // Mute buttons
+            masterMuteButton.addEventListener('click', () => {
+                playSound(sounds.effects.buttonClick, 1);
+                toggleMute();
+            });
+            
+            musicMuteButton.addEventListener('click', () => {
+                playSound(sounds.effects.buttonClick, 1);
+                toggleMusic();
+            });
+            
+            effectsMuteButton.addEventListener('click', () => {
+                playSound(sounds.effects.buttonClick, 1);
+                toggleEffects();
+            });
+            
+            // Initialize UI
+            updateSoundUI();
+        }
+
+        // Add this code right before the initGame() function call at the end of your script tag
+
+        // Leaderboard system
+        const userApi = {
+            // API URL
+            baseUrl: 'http://localhost:3000/api',
+            
+            // Current user info
+            currentUser: {
+                username: null,
+                isGuest: true
+            },
+            
+            // Get the full leaderboard
+            async getLeaderboard() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/leaderboard`);
+                    if (!response.ok) throw new Error('Failed to fetch leaderboard');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching leaderboard:', error);
+                    return [];
+                }
+            },
+            
+            // Submit a score for the current user
+            async submitScore(score) {
+                if (this.currentUser.isGuest) return false;
+                
+                try {
+                    const response = await fetch(`${this.baseUrl}/leaderboard`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: this.currentUser.username,
+                            score: score
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to submit score');
+                    return true;
+                } catch (error) {
+                    console.error('Error submitting score:', error);
+                    return false;
+                }
+            },
+            
+            // Check if a username exists
+            async checkUsernameExists(username) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/username/${encodeURIComponent(username)}`);
+                    if (!response.ok) throw new Error('Failed to check username');
+                    const data = await response.json();
+                    return data.exists;
+                } catch (error) {
+                    console.error('Error checking username:', error);
+                    return false;
+                }
+            },
+            
+            // Delete the current user's profile
+            async deleteProfile() {
+                if (this.currentUser.isGuest) return false;
+                
+                try {
+                    const response = await fetch(`${this.baseUrl}/leaderboard/${encodeURIComponent(this.currentUser.username)}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to delete profile');
+                    return true;
+                } catch (error) {
+                    console.error('Error deleting profile:', error);
+                    return false;
+                }
+            },
+            
+            // Save user to localStorage
+            saveUser() {
+                if (!this.currentUser.isGuest) {
+                    localStorage.setItem('desertRunnerUsername', this.currentUser.username);
+                }
+            },
+            
+            // Load user from localStorage
+            loadUser() {
+                const savedUsername = localStorage.getItem('desertRunnerUsername');
+                if (savedUsername) {
+                    this.currentUser.username = savedUsername;
+                    this.currentUser.isGuest = false;
+                    return true;
+                }
+                return false;
+            },
+            
+            // Clear user data
+            clearUser() {
+                localStorage.removeItem('desertRunnerUsername');
+                this.currentUser.username = null;
+                this.currentUser.isGuest = true;
+            },
+            
+            // Set current user
+            setUser(username) {
+                this.currentUser.username = username;
+                this.currentUser.isGuest = false;
+                this.saveUser();
+            },
+            
+            // Set as guest
+            setGuest() {
+                this.currentUser.username = null;
+                this.currentUser.isGuest = true;
+                this.clearUser();
+            }
+        };
+
+        // Get UI elements
+        const loginScreen = document.getElementById('login-screen');
+        const leaderboardScreen = document.getElementById('leaderboard-screen');
+        const usernameInput = document.getElementById('username-input');
+        const usernameError = document.getElementById('username-error');
+        const loginButton = document.getElementById('login-button');
+        const guestButton = document.getElementById('guest-button');
+        const profileControl = document.getElementById('profile-control');
+        const profileText = document.getElementById('profile-text');
+        const profileMenu = document.getElementById('profile-menu');
+        const viewLeaderboardButton = document.getElementById('view-leaderboard-button');
+        const switchUserButton = document.getElementById('switch-user-button');
+        const deleteProfileButton = document.getElementById('delete-profile-button');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const leaderboardStatus = document.getElementById('leaderboard-status');
+        const playAgainButton = document.getElementById('play-again-button');
+        const leaderboardBackButton = document.getElementById('leaderboard-back-button');
+
+        // Initialize leaderboard UI
+        function initLeaderboardSystem() {
+            // Try to load saved user
+            const hasUser = userApi.loadUser();
+            
+            // Update profile display
+            updateProfileDisplay();
+            
+            // Show appropriate screen on start
+            if (!hasUser) {
+                showLoginScreen();
+            }
+            
+            // Set up event listeners for login screen
+            loginButton.addEventListener('click', handleLogin);
+            guestButton.addEventListener('click', handleGuestLogin);
+            
+            usernameInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+            
+            // Set up leaderboard button
+            const leaderboardButton = document.getElementById('leaderboard-button');
+            if (leaderboardButton) {
+                leaderboardButton.addEventListener('click', () => {
+                    showLeaderboard();
+                    // Play button click sound
+                    playSound(sounds.effects.buttonClick);
+                });
+            }
+            
+            // Set up profile buttons in settings menu
+            const switchUserButton = document.getElementById('switch-user-button');
+            const deleteProfileButton = document.getElementById('delete-profile-button');
+            
+            if (switchUserButton) {
+                switchUserButton.addEventListener('click', () => {
+                    // Hide settings screen
+                    document.getElementById('settings-screen').style.display = 'none';
+                    
+                    // Pause game
+                    const wasRunning = gameRunning;
+                    gameRunning = false;
+                    
+                    // Show login screen
+                    userApi.clearUser();
+                    updateProfileDisplay();
+                    showLoginScreen();
+                    
+                    // Play button click sound
+                    playSound(sounds.effects.buttonClick);
+                });
+            }
+            
+            if (deleteProfileButton) {
+                deleteProfileButton.addEventListener('click', async () => {
+                    if (confirm('Are you sure you want to delete your profile? This cannot be undone.')) {
+                        // Pause game
+                        const wasRunning = gameRunning;
+                        gameRunning = false;
+                        
+                        const success = await userApi.deleteProfile();
+                        if (success) {
+                            userApi.clearUser();
+                            updateProfileDisplay();
+                            
+                            // Hide settings and show login
+                            document.getElementById('settings-screen').style.display = 'none';
+                            showLoginScreen();
+                            
+                            alert('Profile deleted successfully.');
+                        } else {
+                            alert('Failed to delete profile. Please try again later.');
+                            
+                            // Resume game if it was running
+                            gameRunning = wasRunning;
+                        }
+                    }
+                    
+                    // Play button click sound
+                    playSound(sounds.effects.buttonClick);
+                });
+            }
+            
+            // Setup leaderboard screen buttons
+            playAgainButton.addEventListener('click', () => {
+                leaderboardScreen.style.display = 'none';
+                startGame();
+            });
+            
+            leaderboardBackButton.addEventListener('click', () => {
+                // Play button click sound
+                playSound(sounds.effects.buttonClick);
+                
+                leaderboardScreen.style.display = 'none';
+                
+                // Restore the previously visible screen
+                const previousScreen = leaderboardScreen.dataset.previousScreen;
+                if (previousScreen === 'start') {
+                    startScreen.style.display = 'flex';
+                } else if (previousScreen === 'gameover') {
+                    gameOverScreen.style.display = 'flex';
+                } else if (previousScreen === 'login') {
+                    loginScreen.style.display = 'flex';
+                } else {
+                    // Resume game if it was running before
+                    const wasRunning = leaderboardScreen.dataset.wasRunning === 'true';
+                    gameRunning = wasRunning;
+                }
+            });
+            
+            // Add leaderboard button to game over screen
+            const gameOverLeaderboardButton = document.createElement('button');
+            gameOverLeaderboardButton.textContent = 'VIEW LEADERBOARD';
+            gameOverLeaderboardButton.classList.add('button', 'secondary');
+            gameOverLeaderboardButton.style.marginTop = '10px';
+            gameOverLeaderboardButton.addEventListener('click', showLeaderboard);
+            
+            // Insert before restart button
+            gameOverScreen.insertBefore(gameOverLeaderboardButton, restartButton.parentNode);
+        }
+
+        // Handle login button click
+        async function handleLogin() {
+            const username = usernameInput.value.trim();
+            
+            // Validate username
+            if (!username) {
+                usernameError.textContent = 'Please enter a username.';
+                return;
+            }
+            
+            if (username.length < 3) {
+                usernameError.textContent = 'Username must be at least 3 characters.';
+                return;
+            }
+            
+            if (username.toLowerCase() === 'guest') {
+                usernameError.textContent = 'Username "Guest" is not allowed.';
+                return;
+            }
+            
+            // Check if username exists (must have same case)
+            usernameError.textContent = 'Checking username...';
+            const exists = await userApi.checkUsernameExists(username);
+            
+            if (exists) {
+                // Username exists, log in as that user
+                userApi.setUser(username);
+                updateProfileDisplay();
+                loginScreen.style.display = 'none';
+                startScreen.style.display = 'flex';
+                usernameError.textContent = '';
+            } else {
+                // New username, create profile
+                userApi.setUser(username);
+                updateProfileDisplay();
+                loginScreen.style.display = 'none';
+                startScreen.style.display = 'flex';
+                usernameError.textContent = '';
+                
+                // Submit a score of 0 to create the profile
+                await userApi.submitScore(0);
+            }
+        }
+
+        // Handle guest login
+        function handleGuestLogin() {
+            userApi.setGuest();
+            updateProfileDisplay();
+            loginScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            usernameError.textContent = '';
+        }
+
+        // Update profile display
+        function updateProfileDisplay() {
+            // Get both profile text elements
+            const profileText = document.getElementById('profile-text');
+            const settingsProfileText = document.getElementById('settings-profile-text');
+            const deleteProfileButton = document.getElementById('delete-profile-button');
+            
+            if (userApi.currentUser.isGuest) {
+                // Update both displays
+                if (profileText) profileText.textContent = 'Guest';
+                if (settingsProfileText) settingsProfileText.textContent = 'Guest';
+                
+                // Update button text and visibility
+                if (deleteProfileButton) deleteProfileButton.style.display = 'none';
+                
+                const switchUserButton = document.getElementById('switch-user-button');
+                if (switchUserButton) switchUserButton.textContent = 'Create Profile';
+            } else {
+                // Update both displays
+                if (profileText) profileText.textContent = userApi.currentUser.username;
+                if (settingsProfileText) settingsProfileText.textContent = userApi.currentUser.username;
+                
+                // Update button visibility
+                if (deleteProfileButton) deleteProfileButton.style.display = 'inline-block';
+                
+                const switchUserButton = document.getElementById('switch-user-button');
+                if (switchUserButton) switchUserButton.textContent = 'Switch User';
+            }
+        }
+
+        // Show login screen
+        function showLoginScreen() {
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            usernameInput.value = '';
+            usernameError.textContent = '';
+            usernameInput.focus();
+        }
+
+        // Show leaderboard
+        async function showLeaderboard() {
+            // Store current game state
+            const wasRunning = gameRunning;
+
+            // Pause game while leaderboard is open
+            if (wasRunning) {
+                gameRunning = false;
+            }
+
+            startScreen.style.display = 'none';
+            loginScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'flex';
+
+            // Show loading status
+            leaderboardBody.innerHTML = '';
+            leaderboardStatus.textContent = 'Loading leaderboard...';
+            
+            // Fetch leaderboard data
+            const leaderboardData = await userApi.getLeaderboard();
+            
+            if (leaderboardData.length === 0) {
+                leaderboardStatus.textContent = 'No scores yet. Be the first to set a record!';
+                return;
+            }
+            
+            // Clear status
+            leaderboardStatus.textContent = '';
+            
+            // Populate leaderboard table
+            leaderboardData.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                
+                // Highlight current user
+                if (!userApi.currentUser.isGuest && 
+                    entry.username.toLowerCase() === userApi.currentUser.username.toLowerCase()) {
+                    row.classList.add('current-user');
+                }
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.username}</td>
+                    <td>${entry.score}</td>
+                `;
+                
+                leaderboardBody.appendChild(row);
+            });
+
+            // Store game state to resume later
+            leaderboardScreen.dataset.wasRunning = wasRunning.toString();
+            
+            // Store which screen was visible
+            leaderboardScreen.dataset.previousScreen = 'none';
+            if (startScreen.style.display === 'flex') {
+                leaderboardScreen.dataset.previousScreen = 'start';
+            } else if (gameOverScreen.style.display === 'flex') {
+                leaderboardScreen.dataset.previousScreen = 'gameover';
+            } else if (loginScreen.style.display === 'flex') {
+                leaderboardScreen.dataset.previousScreen = 'login';
+            }
+        }
+
+        // Update gameOver function to submit score if logged in
+        function gameOver() {
+            gameRunning = false;
+            
+            // Play death sound
+            playSound(sounds.effects.playerDeath);
+            
+            // Stop music
+            if (sounds.music.main) {
+                sounds.music.main.pause();
+            }
+            
+            // Update high score if needed
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('desertRunnerHighScore', highScore);
+                highScoreElement.textContent = highScore;
+            }
+            
+            // Submit score to leaderboard if not guest
+            if (!userApi.currentUser.isGuest && score > 0) {
+                userApi.submitScore(score).then(success => {
+                    if (success) {
+                        console.log('Score submitted successfully');
+                    } else {
+                        console.warn('Failed to submit score');
+                    }
+                });
+            }
+            
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // Initialize leaderboard system
+        initLeaderboardSystem();
+    </script>
+</body>
+</html>
